@@ -1,17 +1,183 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Pool App</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pool App</title>
+
+<style>
+  * {
+    box-sizing: border-box;
+    touch-action: none;
+  }
+
+  body {
+    margin: 0;
+    min-height: 100vh;
+    background: #111;
+    color: white;
+    font-family: Arial, sans-serif;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  h1 {
+    margin: 18px 0 8px;
+  }
+
+  p {
+    margin: 0 0 15px;
+    color: #bbb;
+  }
+
+  #table {
+    position: relative;
+    width: 94vw;
+    max-width: 900px;
+    aspect-ratio: 2 / 1;
+    background: #08733c;
+    border: 18px solid #5b321c;
+    border-radius: 12px;
+    box-shadow: 0 0 25px #000;
+    overflow: hidden;
+  }
+
+  .pocket {
+    position: absolute;
+    width: 7%;
+    aspect-ratio: 1;
+    background: #050505;
+    border-radius: 50%;
+  }
+
+  .p1 { left: -3.5%; top: -3.5%; }
+  .p2 { right: -3.5%; top: -3.5%; }
+  .p3 { left: -3.5%; bottom: -3.5%; }
+  .p4 { right: -3.5%; bottom: -3.5%; }
+  .p5 { left: 46.5%; top: -5%; }
+  .p6 { left: 46.5%; bottom: -5%; }
+
+  #cueBall {
+    position: absolute;
+    width: 5%;
+    aspect-ratio: 1;
+    background: white;
+    border-radius: 50%;
+    left: 25%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    box-shadow: 0 2px 5px #222;
+  }
+
+  #target {
+    position: absolute;
+    width: 5%;
+    aspect-ratio: 1;
+    background: #e63946;
+    border-radius: 50%;
+    left: 70%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+  }
+
+  #aimLine {
+    position: absolute;
+    height: 3px;
+    background: white;
+    transform-origin: left center;
+    left: 25%;
+    top: 50%;
+    width: 45%;
+  }
+
+  .controls {
+    margin-top: 18px;
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  button {
+    border: 0;
+    border-radius: 8px;
+    padding: 12px 20px;
+    font-size: 16px;
+    font-weight: bold;
+    background: #eee;
+    color: #111;
+  }
+
+  button:active {
+    transform: scale(.96);
+  }
+
+  #info {
+    margin-top: 12px;
+    color: #aaa;
+  }
+</style>
 </head>
 
 <body>
-  <h1>🎱 Pool App</h1>
-  <p>Mi aplicación de Pool</p>
 
-  <button onclick="alert('¡La app funciona!')">
-    Comenzar
-  </button>
+<h1>🎱 Pool App</h1>
+<p>Herramienta de práctica de tiro</p>
+
+<div id="table">
+
+  <div class="pocket p1"></div>
+  <div class="pocket p2"></div>
+  <div class="pocket p3"></div>
+  <div class="pocket p4"></div>
+  <div class="pocket p5"></div>
+  <div class="pocket p6"></div>
+
+  <div id="cueBall"></div>
+  <div id="target"></div>
+  <div id="aimLine"></div>
+
+</div>
+
+<div class="controls">
+  <button onclick="extendLine()">Extender línea</button>
+  <button onclick="resetLine()">Reiniciar</button>
+</div>
+
+<div id="info">
+  Línea de tiro: <span id="length">45%</span>
+</div>
+
+<script>
+
+let lineLength = 45;
+
+function extendLine() {
+  lineLength += 10;
+
+  if (lineLength > 100) {
+    lineLength = 100;
+  }
+
+  document.getElementById("aimLine").style.width =
+    lineLength + "%";
+
+  document.getElementById("length").textContent =
+    lineLength + "%";
+}
+
+function resetLine() {
+  lineLength = 45;
+
+  document.getElementById("aimLine").style.width =
+    lineLength + "%";
+
+  document.getElementById("length").textContent =
+    lineLength + "%";
+}
+
+</script>
+
 </body>
 </html>
