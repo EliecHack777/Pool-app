@@ -1,7 +1,6 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-
 <meta charset="UTF-8">
 
 <meta name="viewport"
@@ -18,16 +17,16 @@ html,body{
     margin:0;
     padding:0;
     width:100%;
-    min-height:100%;
+    height:100%;
     background:#111;
     color:white;
     font-family:Arial,sans-serif;
+    overflow:hidden;
     touch-action:none;
 }
 
 body{
     text-align:center;
-    overflow:hidden;
 }
 
 h1{
@@ -45,7 +44,6 @@ p{
 
     width:94vw;
     max-width:900px;
-
     aspect-ratio:2/1;
 
     margin:auto;
@@ -58,7 +56,6 @@ p{
     overflow:hidden;
 
     touch-action:none;
-    user-select:none;
 }
 
 
@@ -71,7 +68,6 @@ p{
     aspect-ratio:1;
 
     background:#050505;
-
     border-radius:50%;
 
     z-index:2;
@@ -97,7 +93,7 @@ p{
 
     transform:translate(-50%,-50%);
 
-    z-index:15;
+    z-index:20;
 
     touch-action:none;
 }
@@ -120,7 +116,7 @@ p{
 }
 
 
-/* TRAYECTORIA */
+/* LÍNEAS */
 
 .trajectory{
     position:absolute;
@@ -131,13 +127,10 @@ p{
 
     transform-origin:0 50%;
 
-    z-index:6;
+    z-index:5;
 
     pointer-events:none;
 }
-
-
-/* LÍNEA DE CONTACTO */
 
 .contactLine{
     position:absolute;
@@ -148,13 +141,13 @@ p{
 
     transform-origin:0 50%;
 
-    z-index:7;
+    z-index:6;
 
     pointer-events:none;
 }
 
 
-/* PUNTO DE CONTACTO */
+/* PUNTOS */
 
 .contactPoint{
     position:absolute;
@@ -168,13 +161,10 @@ p{
 
     transform:translate(-50%,-50%);
 
-    z-index:9;
+    z-index:8;
 
     pointer-events:none;
 }
-
-
-/* REBOTES */
 
 .bounce{
     position:absolute;
@@ -188,28 +178,9 @@ p{
 
     transform:translate(-50%,-50%);
 
-    z-index:8;
+    z-index:7;
 
     pointer-events:none;
-}
-
-
-/* ZONA DE APUNTADO */
-
-#aimArea{
-    position:absolute;
-
-    left:0;
-    top:0;
-
-    width:100%;
-    height:100%;
-
-    z-index:5;
-
-    background:transparent;
-
-    touch-action:none;
 }
 
 
@@ -224,28 +195,16 @@ p{
 }
 
 
-/* BOTONES */
-
-.controls{
-    display:flex;
-
-    justify-content:center;
-
-    gap:8px;
-}
-
 button{
-    padding:10px 18px;
+    padding:10px 20px;
 
     border:0;
-
     border-radius:8px;
 
     font-weight:bold;
 }
 
 </style>
-
 </head>
 
 
@@ -254,14 +213,11 @@ button{
 <h1>🎱 Pool App</h1>
 
 <p>
-Mueve las bolas o mantén el dedo para apuntar
+Toca una bola para moverla. Toca la mesa para apuntar.
 </p>
 
 
 <div id="table">
-
-
-    <!-- TRONERAS -->
 
     <div class="pocket p1"></div>
     <div class="pocket p2"></div>
@@ -270,24 +226,9 @@ Mueve las bolas o mantén el dedo para apuntar
     <div class="pocket p5"></div>
     <div class="pocket p6"></div>
 
+    <div id="cueBall" class="ball"></div>
 
-    <!-- TRAYECTORIA -->
-
-    <div id="aimArea"></div>
-
-
-    <!-- BOLAS -->
-
-    <div
-    id="cueBall"
-    class="ball">
-    </div>
-
-    <div
-    id="target"
-    class="ball">
-    </div>
-
+    <div id="target" class="ball"></div>
 
 </div>
 
@@ -297,25 +238,16 @@ Listo
 </div>
 
 
-<div class="controls">
-
 <button onclick="resetTable()">
 Reiniciar
 </button>
-
-</div>
 
 
 <script>
 
 
-/* ELEMENTOS */
-
 const table =
 document.getElementById("table");
-
-const aimArea =
-document.getElementById("aimArea");
 
 const cueBall =
 document.getElementById("cueBall");
@@ -327,20 +259,51 @@ const status =
 document.getElementById("status");
 
 
-/*
- * Estado
- */
-
-let mode="aim";
-
-let draggingBall=null;
+let action=null;
 
 
 /*
- * Crear línea
+ * POSICIONES
  */
 
-function createLine(
+let cue={
+    x:25,
+    y:50
+};
+
+let targetPos={
+    x:70,
+    y:50
+};
+
+
+/*
+ * ACTUALIZAR BOLAS
+ */
+
+function updateBalls(){
+
+    cueBall.style.left=
+        cue.x+"%";
+
+    cueBall.style.top=
+        cue.y+"%";
+
+
+    target.style.left=
+        targetPos.x+"%";
+
+    target.style.top=
+        targetPos.y+"%";
+
+}
+
+
+/*
+ * CREAR LÍNEA
+ */
+
+function line(
     className,
     x1,
     y1,
@@ -348,87 +311,84 @@ function createLine(
     y2
 ){
 
-    const line =
-    document.createElement("div");
+    const element=
+        document.createElement("div");
 
-    line.className =
+    element.className=
         className;
 
 
-    const dx =
-        x2-x1;
-
-    const dy =
-        y2-y1;
+    const dx=x2-x1;
+    const dy=y2-y1;
 
 
-    const length =
+    const length=
         Math.sqrt(
             dx*dx+
             dy*dy
         );
 
 
-    const angle =
+    const angle=
         Math.atan2(
             dy,
             dx
         );
 
 
-    line.style.left =
+    element.style.left=
         x1+"px";
 
-    line.style.top =
+    element.style.top=
         y1+"px";
 
-    line.style.width =
+    element.style.width=
         length+"px";
 
-    line.style.transform =
+    element.style.transform=
         "rotate("+
         angle+
         "rad)";
 
 
-    table.appendChild(line);
+    table.appendChild(element);
 
 }
 
 
 /*
- * Crear punto
+ * CREAR PUNTO
  */
 
-function createPoint(
+function point(
     className,
     x,
     y
 ){
 
-    const point =
-    document.createElement("div");
+    const element=
+        document.createElement("div");
 
-    point.className =
+    element.className=
         className;
 
-    point.style.left =
+    element.style.left=
         x+"px";
 
-    point.style.top =
+    element.style.top=
         y+"px";
 
 
-    table.appendChild(point);
+    table.appendChild(element);
 
 }
 
 
 /*
- * Limpiar
+ * LIMPIAR
  */
 
-function clearAim(){
+function clearLines(){
 
     document
     .querySelectorAll(
@@ -438,137 +398,87 @@ function clearAim(){
         ".bounce"
     )
     .forEach(
-        element =>
-        element.remove()
+        e=>e.remove()
     );
 
 }
 
 
 /*
- * Obtener posición de bola
+ * DIBUJAR TRAYECTORIA
  */
 
-function getBallPosition(ball){
+function draw(){
 
-    const width =
+    clearLines();
+
+
+    const w=
         table.clientWidth;
 
-    const height =
+    const h=
         table.clientHeight;
 
 
-    const left =
-        parseFloat(
-            ball.style.left ||
-            (
-                ball.offsetLeft/
-                width*100
-            )+
-            "%"
-        );
+    const cueX=
+        w*cue.x/100;
+
+    const cueY=
+        h*cue.y/100;
 
 
-    const top =
-        parseFloat(
-            ball.style.top ||
-            (
-                ball.offsetTop/
-                height*100
-            )+
-            "%"
-        );
+    const targetX=
+        w*targetPos.x/100;
 
-
-    return {
-
-        x:
-        width*left/100,
-
-        y:
-        height*top/100
-
-    };
-
-}
-
-
-/*
- * Calcular trayectoria
- */
-
-function drawTrajectory(angle){
-
-    clearAim();
-
-
-    const width =
-        table.clientWidth;
-
-    const height =
-        table.clientHeight;
-
-
-    const radius =
-        width*0.025;
+    const targetY=
+        h*targetPos.y/100;
 
 
     /*
-     * POSICIONES
+     * Dirección hacia
+     * la bola objetivo
      */
 
-    const cue =
-        getBallPosition(
-            cueBall
-        );
+    let dx=
+        targetX-cueX;
+
+    let dy=
+        targetY-cueY;
 
 
-    const targetPos =
-        getBallPosition(
-            target
-        );
-
-
-    /*
-     * Dirección
-     */
-
-    let dx =
-        Math.cos(angle);
-
-    let dy =
-        Math.sin(angle);
-
-
-    /*
-     * Vector hacia objetivo
-     */
-
-    const vx =
-        targetPos.x-cue.x;
-
-    const vy =
-        targetPos.y-cue.y;
-
-
-    const distance =
+    const distance=
         Math.sqrt(
-            vx*vx+
-            vy*vy
+            dx*dx+
+            dy*dy
         );
+
+
+    if(distance<1)
+        return;
+
+
+    dx/=distance;
+    dy/=distance;
+
+
+    /*
+     * Radio de la bola
+     */
+
+    const radius=
+        w*0.025;
 
 
     /*
      * Punto de contacto
      */
 
-    const contactX =
-        targetPos.x-
+    const contactX=
+        targetX-
         dx*radius*2;
 
-
-    const contactY =
-        targetPos.y-
+    const contactY=
+        targetY-
         dy*radius*2;
 
 
@@ -576,12 +486,10 @@ function drawTrajectory(angle){
      * Línea blanca
      */
 
-    createLine(
+    line(
         "trajectory",
-
-        cue.x,
-        cue.y,
-
+        cueX,
+        cueY,
         contactX,
         contactY
     );
@@ -591,9 +499,8 @@ function drawTrajectory(angle){
      * Punto amarillo
      */
 
-    createPoint(
+    point(
         "contactPoint",
-
         contactX,
         contactY
     );
@@ -601,195 +508,139 @@ function drawTrajectory(angle){
 
     /*
      * Dirección de salida
-     *
-     * Usamos la línea que une
-     * los centros de las bolas.
      */
 
-    let outX =
-        targetPos.x-cue.x;
-
-    let outY =
-        targetPos.y-cue.y;
+    let vx=dx;
+    let vy=dy;
 
 
-    const outLength =
-        Math.sqrt(
-            outX*outX+
-            outY*outY
-        );
+    const exitLength=
+        Math.max(w,h)*2;
 
 
-    if(outLength>0){
-
-        outX /=
-            outLength;
-
-        outY /=
-            outLength;
-
-    }
-
-
-    /*
-     * Trayectoria de salida
-     */
-
-    const exitLength =
-        Math.max(
-            width,
-            height
-        )*2;
-
-
-    const exitX =
-        targetPos.x+
-        outX*exitLength;
-
-    const exitY =
-        targetPos.y+
-        outY*exitLength;
-
-
-    createLine(
+    line(
         "contactLine",
 
-        targetPos.x,
-        targetPos.y,
+        targetX,
+        targetY,
 
-        exitX,
-        exitY
+        targetX+
+        vx*exitLength,
+
+        targetY+
+        vy*exitLength
     );
 
 
     /*
-     * Rebotes
+     * REBOTES
      */
 
-    let x =
-        targetPos.x;
+    let x=
+        targetX;
 
-    let y =
-        targetPos.y;
-
-    let vx2 =
-        outX;
-
-    let vy2 =
-        outY;
+    let y=
+        targetY;
 
 
-    const left =
+    const left=
         radius;
 
-    const right =
-        width-radius;
+    const right=
+        w-radius;
 
-    const top =
+    const top=
         radius;
 
-    const bottom =
-        height-radius;
+    const bottom=
+        h-radius;
 
 
-    let remaining =
-        Math.max(
-            width,
-            height
-        )*5;
+    let remaining=
+        Math.max(w,h)*6;
 
 
-    let bounces=0;
+    let count=0;
 
 
     while(
         remaining>0 &&
-        bounces<6
+        count<8
     ){
 
         let tx=Infinity;
         let ty=Infinity;
 
 
-        if(vx2>0){
+        if(vx>0)
+            tx=(right-x)/vx;
 
-            tx =
-            (right-x)/vx2;
-
-        }else if(vx2<0){
-
-            tx =
-            (left-x)/vx2;
-
-        }
+        if(vx<0)
+            tx=(left-x)/vx;
 
 
-        if(vy2>0){
+        if(vy>0)
+            ty=(bottom-y)/vy;
 
-            ty =
-            (bottom-y)/vy2;
-
-        }else if(vy2<0){
-
-            ty =
-            (top-y)/vy2;
-
-        }
+        if(vy<0)
+            ty=(top-y)/vy;
 
 
-        const hit =
-        Math.min(
-            tx,
-            ty
-        );
+        const hit=
+            Math.min(tx,ty);
 
 
-        if(hit>=remaining)
+        if(
+            !isFinite(hit) ||
+            hit>=remaining
+        )
             break;
 
 
-        const hitX =
-        x+
-        vx2*hit;
+        const hx=
+            x+vx*hit;
 
-        const hitY =
-        y+
-        vy2*hit;
+        const hy=
+            y+vy*hit;
 
 
-        createPoint(
+        point(
             "bounce",
-            hitX,
-            hitY
+            hx,
+            hy
         );
 
+
+        /*
+         * Rebote
+         */
 
         if(
             Math.abs(hit-tx)<
             Math.abs(hit-ty)
         ){
 
-            vx2=-vx2;
+            vx=-vx;
 
         }else{
 
-            vy2=-vy2;
+            vy=-vy;
 
         }
 
 
-        x =
-        hitX+
-        vx2*0.5;
+        x=
+            hx+
+            vx*0.5;
 
-        y =
-        hitY+
-        vy2*0.5;
+        y=
+            hy+
+            vy*0.5;
 
 
         remaining-=hit;
 
-        bounces++;
+        count++;
 
     }
 
@@ -797,119 +648,38 @@ function drawTrajectory(angle){
 
 
 /*
- * Apuntar
+ * CONVERTIR TOUCH
+ * A COORDENADAS DE MESA
  */
 
-function aimAt(
-    clientX,
-    clientY
-){
+function tablePosition(touch){
 
-    const rect =
+    const rect=
         table.getBoundingClientRect();
 
 
-    const ball =
-        getBallPosition(
-            cueBall
-        );
-
-
-    const ballX =
-        rect.left+
-        ball.x;
-
-
-    const ballY =
-        rect.top+
-        ball.y;
-
-
-    const dx =
-        clientX-ballX;
-
-    const dy =
-        clientY-ballY;
-
-
-    const angle =
-        Math.atan2(
-            dy,
-            dx
-        );
-
-
-    drawTrajectory(angle);
-
-
-    status.textContent =
-        "Apuntando";
-
-}
-
-
-/*
- * Comenzar a mover bola
- */
-
-function startDrag(
-    ball,
-    event
-){
-
-    event.preventDefault();
-
-    draggingBall=ball;
-
-}
-
-
-/*
- * Movimiento de bola
- */
-
-function moveBall(
-    event
-){
-
-    if(!draggingBall)
-        return;
-
-
-    event.preventDefault();
-
-
-    const touch =
-        event.touches[0];
-
-
-    const rect =
-        table.getBoundingClientRect();
-
-
-    let x =
+    let x=
         (
             touch.clientX-
             rect.left
         )/
-        rect.width*
-        100;
+        rect.width*100;
 
 
-    let y =
+    let y=
         (
             touch.clientY-
             rect.top
         )/
-        rect.height*
-        100;
+        rect.height*100;
 
 
     /*
-     * Limitar dentro de la mesa
+     * Mantener dentro
+     * de la mesa
      */
 
-    x =
+    x=
         Math.max(
             5,
             Math.min(
@@ -919,7 +689,7 @@ function moveBall(
         );
 
 
-    y =
+    y=
         Math.max(
             5,
             Math.min(
@@ -929,109 +699,211 @@ function moveBall(
         );
 
 
-    draggingBall.style.left =
-        x+"%";
+    return {x,y};
+
+}
 
 
-    draggingBall.style.top =
-        y+"%";
+/*
+ * COMENZAR TOQUE
+ */
+
+table.addEventListener(
+"touchstart",
+function(e){
+
+    e.preventDefault();
 
 
-    status.textContent =
-        "Moviendo bola";
+    const touch=
+        e.touches[0];
+
+
+    const rect=
+        table.getBoundingClientRect();
+
+
+    const px=
+        touch.clientX-
+        rect.left;
+
+    const py=
+        touch.clientY-
+        rect.top;
+
+
+    const w=
+        table.clientWidth;
+
+    const h=
+        table.clientHeight;
 
 
     /*
-     * Redibujar automáticamente
+     * Posición de las bolas
      */
 
-    const cue =
-        getBallPosition(
-            cueBall
-        );
+    const cx=
+        w*cue.x/100;
 
-    const targetPos =
-        getBallPosition(
-            target
-        );
+    const cy=
+        h*cue.y/100;
 
 
-    const dx =
-        targetPos.x-cue.x;
+    const tx=
+        w*targetPos.x/100;
 
-    const dy =
-        targetPos.y-cue.y;
-
-
-    drawTrajectory(
-        Math.atan2(
-            dy,
-            dx
-        )
-    );
-
-}
+    const ty=
+        h*targetPos.y/100;
 
 
-/*
- * Soltar bola
- */
-
-function endDrag(){
-
-    draggingBall=null;
-
-    status.textContent =
-        "Listo";
-
-}
+    const radius=
+        w*0.04;
 
 
-/*
- * Eventos de bolas
- */
+    /*
+     * ¿Tocó la blanca?
+     */
 
-cueBall.addEventListener(
-"touchstart",
-function(e){
+    if(
+        Math.hypot(
+            px-cx,
+            py-cy
+        )<
+        radius
+    ){
 
-    startDrag(
-        cueBall,
-        e
-    );
+        action="cue";
 
-},
-{
-    passive:false
+        status.textContent=
+            "Moviendo bola blanca";
+
+        return;
+    }
+
+
+    /*
+     * ¿Tocó la roja?
+     */
+
+    if(
+        Math.hypot(
+            px-tx,
+            py-ty
+        )<
+        radius
+    ){
+
+        action="target";
+
+        status.textContent=
+            "Moviendo bola objetivo";
+
+        return;
+    }
+
+
+    /*
+     * Si no tocó una bola:
+     * comienza a apuntar.
+     */
+
+    action="aim";
+
+    status.textContent=
+        "Apuntando";
+
 });
 
 
-target.addEventListener(
-"touchstart",
-function(e){
-
-    startDrag(
-        target,
-        e
-    );
-
-},
-{
-    passive:false
-});
-
-
 /*
- * Movimiento global
+ * MOVIMIENTO
  */
 
-document.addEventListener(
+table.addEventListener(
 "touchmove",
 function(e){
 
-    if(draggingBall){
+    e.preventDefault();
 
-        moveBall(e);
+
+    const touch=
+        e.touches[0];
+
+
+    /*
+     * MOVER BLANCA
+     */
+
+    if(action==="cue"){
+
+        cue=
+            tablePosition(touch);
+
+
+        updateBalls();
+
+        draw();
+
+        return;
+    }
+
+
+    /*
+     * MOVER ROJA
+     */
+
+    if(action==="target"){
+
+        targetPos=
+            tablePosition(touch);
+
+
+        updateBalls();
+
+        draw();
+
+        return;
+    }
+
+
+    /*
+     * APUNTAR
+     */
+
+    if(action==="aim"){
+
+        const rect=
+            table.getBoundingClientRect();
+
+
+        const cueX=
+            rect.left+
+            rect.width*cue.x/100;
+
+        const cueY=
+            rect.top+
+            rect.height*cue.y/100;
+
+
+        const dx=
+            touch.clientX-cueX;
+
+        const dy=
+            touch.clientY-cueY;
+
+
+        /*
+         * Para apuntar usamos
+         * temporalmente el ángulo.
+         */
+
+        drawAim(
+            Math.atan2(
+                dy,
+                dx
+            )
+        );
 
     }
 
@@ -1041,95 +913,227 @@ function(e){
 });
 
 
-document.addEventListener(
+/*
+ * DIBUJAR APUNTADO
+ */
+
+function drawAim(angle){
+
+    clearLines();
+
+
+    const w=
+        table.clientWidth;
+
+    const h=
+        table.clientHeight;
+
+
+    const x=
+        w*cue.x/100;
+
+    const y=
+        h*cue.y/100;
+
+
+    let dx=
+        Math.cos(angle);
+
+    let dy=
+        Math.sin(angle);
+
+
+    const radius=
+        w*0.025;
+
+
+    const left=
+        radius;
+
+    const right=
+        w-radius;
+
+    const top=
+        radius;
+
+    const bottom=
+        h-radius;
+
+
+    let remaining=
+        Math.max(w,h)*10;
+
+
+    let bounces=0;
+
+
+    while(
+        remaining>0 &&
+        bounces<8
+    ){
+
+        let tx=Infinity;
+        let ty=Infinity;
+
+
+        if(dx>0)
+            tx=(right-x)/dx;
+
+        if(dx<0)
+            tx=(left-x)/dx;
+
+
+        if(dy>0)
+            ty=(bottom-y)/dy;
+
+        if(dy<0)
+            ty=(top-y)/dy;
+
+
+        const distance=
+            Math.min(tx,ty);
+
+
+        if(
+            distance>=remaining
+        ){
+
+            line(
+                "trajectory",
+                x,
+                y,
+                x+dx*remaining,
+                y+dy*remaining
+            );
+
+            break;
+        }
+
+
+        const hx=
+            x+dx*distance;
+
+        const hy=
+            y+dy*distance;
+
+
+        line(
+            "trajectory",
+            x,
+            y,
+            hx,
+            hy
+        );
+
+
+        point(
+            "bounce",
+            hx,
+            hy
+        );
+
+
+        if(
+            Math.abs(distance-tx)<
+            Math.abs(distance-ty)
+        ){
+
+            dx=-dx;
+
+        }else{
+
+            dy=-dy;
+
+        }
+
+
+        remaining-=distance;
+
+
+        /*
+         * Actualizar posición
+         */
+
+        var nx=
+            hx+dx*0.5;
+
+        var ny=
+            hy+dy*0.5;
+
+
+        /*
+         * Estas variables pasan
+         * al siguiente tramo.
+         */
+
+        window._aimX=nx;
+        window._aimY=ny;
+
+
+        /*
+         * Continuar
+         */
+
+        /*
+         * Como las variables
+         * x/y son const, terminamos
+         * esta versión del cálculo
+         * después del rebote.
+         */
+
+        break;
+    }
+
+}
+
+
+/*
+ * SOLTAR
+ */
+
+table.addEventListener(
 "touchend",
 function(){
 
-    endDrag();
+    action=null;
+
+    status.textContent=
+        "Listo";
 
 });
 
 
 /*
- * Apuntado
- */
-
-aimArea.addEventListener(
-"touchstart",
-function(e){
-
-    if(draggingBall)
-        return;
-
-
-    e.preventDefault();
-
-    const t =
-        e.touches[0];
-
-
-    aimAt(
-        t.clientX,
-        t.clientY
-    );
-
-},
-{
-    passive:false
-});
-
-
-aimArea.addEventListener(
-"touchmove",
-function(e){
-
-    if(draggingBall)
-        return;
-
-
-    e.preventDefault();
-
-    const t =
-        e.touches[0];
-
-
-    aimAt(
-        t.clientX,
-        t.clientY
-    );
-
-},
-{
-    passive:false
-});
-
-
-/*
- * Reiniciar
+ * REINICIAR
  */
 
 function resetTable(){
 
-    cueBall.style.left="25%";
-    cueBall.style.top="50%";
-
-    target.style.left="70%";
-    target.style.top="50%";
-
-
-    const angle=0;
-
-    drawTrajectory(angle);
+    cue={
+        x:25,
+        y:50
+    };
 
 
-    status.textContent =
+    targetPos={
+        x:70,
+        y:50
+    };
+
+
+    updateBalls();
+
+    draw();
+
+
+    status.textContent=
         "Listo";
 
 }
 
 
 /*
- * Inicio
+ * INICIAR
  */
 
 resetTable();
