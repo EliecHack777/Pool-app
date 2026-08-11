@@ -17,21 +17,20 @@ html,body{
     margin:0;
     padding:0;
     width:100%;
-    height:100%;
+    min-height:100%;
     background:#111;
     color:white;
     font-family:Arial,sans-serif;
-    overflow:hidden;
     touch-action:none;
 }
 
 body{
     text-align:center;
+    overflow:hidden;
 }
 
 h1{
     margin:10px 0 3px;
-    font-size:24px;
 }
 
 p{
@@ -44,6 +43,7 @@ p{
 
     width:94vw;
     max-width:900px;
+
     aspect-ratio:2/1;
 
     margin:auto;
@@ -51,13 +51,16 @@ p{
     background:#08733c;
 
     border:18px solid #5b321c;
+
     border-radius:12px;
 
     overflow:hidden;
 
     touch-action:none;
-    user-select:none;
 }
+
+
+/* TRONERAS */
 
 .pocket{
     position:absolute;
@@ -69,62 +72,20 @@ p{
 
     border-radius:50%;
 
-    z-index:4;
+    z-index:2;
 }
 
-.p1{
-    left:-3.5%;
-    top:-3.5%;
-}
-
-.p2{
-    right:-3.5%;
-    top:-3.5%;
-}
-
-.p3{
-    left:-3.5%;
-    bottom:-3.5%;
-}
-
-.p4{
-    right:-3.5%;
-    bottom:-3.5%;
-}
-
-.p5{
-    left:46.5%;
-    top:-5%;
-}
-
-.p6{
-    left:46.5%;
-    bottom:-5%;
-}
-
-
-/* CANVAS DE TRAYECTORIA */
-
-#trajectory{
-
-    position:absolute;
-
-    left:0;
-    top:0;
-
-    width:100%;
-    height:100%;
-
-    z-index:5;
-
-    pointer-events:none;
-}
+.p1{left:-3.5%;top:-3.5%}
+.p2{right:-3.5%;top:-3.5%}
+.p3{left:-3.5%;bottom:-3.5%}
+.p4{right:-3.5%;bottom:-3.5%}
+.p5{left:46.5%;top:-5%}
+.p6{left:46.5%;bottom:-5%}
 
 
 /* BOLA BLANCA */
 
 #cueBall{
-
     position:absolute;
 
     width:5%;
@@ -139,19 +100,15 @@ p{
 
     border-radius:50%;
 
-    z-index:8;
+    z-index:10;
 
     pointer-events:none;
-
-    box-shadow:
-    0 2px 5px rgba(0,0,0,.5);
 }
 
 
-/* BOLA OBJETIVO */
+/* BOLA ROJA */
 
 #target{
-
     position:absolute;
 
     width:5%;
@@ -166,6 +123,46 @@ p{
 
     border-radius:50%;
 
+    z-index:10;
+
+    pointer-events:none;
+}
+
+
+/* LÍNEAS */
+
+.trajectory{
+    position:absolute;
+
+    height:4px;
+
+    background:white;
+
+    transform-origin:0 50%;
+
+    z-index:6;
+
+    pointer-events:none;
+
+    box-shadow:
+    0 0 3px rgba(255,255,255,.8);
+}
+
+
+/* PUNTOS DE REBOTE */
+
+.bounce{
+    position:absolute;
+
+    width:10px;
+    height:10px;
+
+    background:#ffd166;
+
+    border-radius:50%;
+
+    transform:translate(-50%,-50%);
+
     z-index:8;
 
     pointer-events:none;
@@ -175,7 +172,6 @@ p{
 /* ZONA TÁCTIL */
 
 #touchArea{
-
     position:absolute;
 
     left:0;
@@ -192,10 +188,9 @@ p{
 }
 
 
-/* INFORMACIÓN */
+/* TEXTO */
 
 #status{
-
     margin:8px;
 
     color:#aaa;
@@ -204,30 +199,14 @@ p{
 }
 
 
-/* BOTONES */
-
-.controls{
-
-    display:flex;
-
-    justify-content:center;
-
-    gap:8px;
-
-    margin-top:5px;
-}
-
 button{
-
-    padding:10px 18px;
+    padding:10px 20px;
 
     border:0;
 
     border-radius:8px;
 
     font-weight:bold;
-
-    font-size:14px;
 }
 
 </style>
@@ -239,14 +218,12 @@ button{
 <h1>🎱 Pool App</h1>
 
 <p>
-Mantén el dedo sobre la mesa y muévelo para apuntar
+Mantén el dedo y muévelo para apuntar
 </p>
 
 
 <div id="table">
 
-
-    <!-- TRONERAS -->
 
     <div class="pocket p1"></div>
     <div class="pocket p2"></div>
@@ -256,19 +233,10 @@ Mantén el dedo sobre la mesa y muévelo para apuntar
     <div class="pocket p6"></div>
 
 
-    <!-- TRAYECTORIA -->
-
-    <canvas id="trajectory"></canvas>
-
-
-    <!-- BOLAS -->
-
     <div id="cueBall"></div>
 
     <div id="target"></div>
 
-
-    <!-- CONTROL TÁCTIL -->
 
     <div id="touchArea"></div>
 
@@ -280,31 +248,18 @@ Listo
 </div>
 
 
-<div class="controls">
-
 <button onclick="resetAim()">
 Reiniciar
 </button>
 
-</div>
-
 
 <script>
-
-
-/* ELEMENTOS */
 
 const table =
 document.getElementById("table");
 
 const touchArea =
 document.getElementById("touchArea");
-
-const canvas =
-document.getElementById("trajectory");
-
-const ctx =
-canvas.getContext("2d");
 
 const status =
 document.getElementById("status");
@@ -313,49 +268,116 @@ document.getElementById("status");
 let active=false;
 
 
-/* AJUSTAR CANVAS */
+/*
+ * Crear una línea entre dos puntos
+ */
 
-function resizeCanvas(){
+function createLine(
+    x1,
+    y1,
+    x2,
+    y2
+){
 
-    canvas.width =
-    table.clientWidth;
+    const line =
+    document.createElement("div");
 
-    canvas.height =
-    table.clientHeight;
+    line.className="trajectory";
 
-    drawTrajectory(0);
+
+    const dx=x2-x1;
+    const dy=y2-y1;
+
+
+    const length =
+    Math.sqrt(
+        dx*dx+
+        dy*dy
+    );
+
+
+    const angle =
+    Math.atan2(
+        dy,
+        dx
+    );
+
+
+    line.style.left=x1+"px";
+    line.style.top=y1+"px";
+
+    line.style.width=length+"px";
+
+    line.style.transform=
+        "rotate("+
+        angle+
+        "rad)";
+
+
+    table.appendChild(line);
+}
+
+
+/*
+ * Crear punto de rebote
+ */
+
+function createBounce(x,y){
+
+    const point =
+    document.createElement("div");
+
+    point.className="bounce";
+
+    point.style.left=x+"px";
+    point.style.top=y+"px";
+
+    table.appendChild(point);
+}
+
+
+/*
+ * Borrar trayectoria anterior
+ */
+
+function clearTrajectory(){
+
+    document
+    .querySelectorAll(
+        ".trajectory,.bounce"
+    )
+    .forEach(
+        element=>element.remove()
+    );
 
 }
 
 
-/* CALCULAR TRAYECTORIA */
+/*
+ * CALCULAR REBOTES
+ */
 
 function drawTrajectory(angle){
 
-    const w =
-    canvas.width;
-
-    const h =
-    canvas.height;
+    clearTrajectory();
 
 
-    ctx.clearRect(
-        0,
-        0,
-        w,
-        h
-    );
+    const width =
+    table.clientWidth;
+
+    const height =
+    table.clientHeight;
 
 
     /*
-     * Posición de la bola blanca
+     * Bola blanca
      */
 
     let x =
-    w * 0.25;
+    width*0.25;
 
     let y =
-    h * 0.50;
+    height*0.50;
 
 
     /*
@@ -370,241 +392,212 @@ function drawTrajectory(angle){
 
 
     /*
-     * Distancia total
+     * Distancia máxima
      */
 
     let remaining =
-    Math.max(w,h) * 8;
+    Math.max(
+        width,
+        height
+    )*10;
 
 
     /*
-     * Cantidad máxima
-     * de rebotes
+     * Máximo 8 rebotes
      */
 
     let bounceCount=0;
 
 
-    /*
-     * Comenzar trayectoria
-     */
-
-    ctx.beginPath();
-
-    ctx.moveTo(x,y);
-
-
     while(
-        remaining > 0 &&
-        bounceCount < 8
+        remaining>0 &&
+        bounceCount<8
     ){
 
-
-        let distanceX;
-        let distanceY;
+        let tx=Infinity;
+        let ty=Infinity;
 
 
         /*
-         * Distancia hasta
-         * banda izquierda/derecha
+         * Banda derecha/izquierda
          */
 
         if(dx>0){
 
-            distanceX =
-            (w-x)/dx;
+            tx=
+            (width-x)/dx;
 
-        }else{
+        }else if(dx<0){
 
-            distanceX =
+            tx=
             (0-x)/dx;
-
         }
 
 
         /*
-         * Distancia hasta
-         * banda superior/inferior
+         * Banda inferior/superior
          */
 
         if(dy>0){
 
-            distanceY =
-            (h-y)/dy;
+            ty=
+            (height-y)/dy;
 
-        }else{
+        }else if(dy<0){
 
-            distanceY =
+            ty=
             (0-y)/dy;
-
         }
 
 
         /*
-         * Encontrar
-         * próxima banda
+         * Próxima banda
          */
 
-        const hitDistance =
+        const distance =
         Math.min(
-            distanceX,
-            distanceY
+            tx,
+            ty
         );
 
 
         /*
-         * Si no alcanza otra banda
+         * No llega a otra banda
          */
 
         if(
-            hitDistance >= remaining
+            distance>=remaining
         ){
 
-            x +=
-            dx * remaining;
+            const endX =
+            x+
+            dx*remaining;
 
-            y +=
-            dy * remaining;
+            const endY =
+            y+
+            dy*remaining;
 
-            ctx.lineTo(x,y);
+
+            createLine(
+                x,
+                y,
+                endX,
+                endY
+            );
+
 
             break;
         }
 
 
         /*
-         * Llegar hasta la banda
+         * Punto donde golpea
+         * la banda
          */
 
-        x +=
-        dx * hitDistance;
+        const hitX =
+        x+
+        dx*distance;
 
-        y +=
-        dy * hitDistance;
-
-
-        ctx.lineTo(x,y);
-
-
-        remaining -=
-        hitDistance;
+        const hitY =
+        y+
+        dy*distance;
 
 
         /*
-         * Determinar
-         * qué banda golpeó
+         * Dibujar tramo
          */
 
-        const hitVertical =
-        Math.abs(
-            hitDistance-distanceX
-        ) <
-        Math.abs(
-            hitDistance-distanceY
+        createLine(
+            x,
+            y,
+            hitX,
+            hitY
         );
 
 
-        if(hitVertical){
+        /*
+         * Marcar rebote
+         */
+
+        createBounce(
+            hitX,
+            hitY
+        );
+
+
+        /*
+         * Saber qué banda golpeó
+         */
+
+        if(
+            Math.abs(
+                distance-tx
+            ) <
+            0.001
+        ){
 
             /*
-             * Rebote horizontal
+             * Banda izquierda/derecha
              */
 
-            dx = -dx;
+            dx=-dx;
 
         }else{
 
             /*
-             * Rebote vertical
+             * Banda superior/inferior
              */
 
-            dy = -dy;
-
+            dy=-dy;
         }
 
 
         /*
-         * Marcar punto de rebote
+         * Continuar un poquito
+         * después del rebote
          */
 
-        ctx.arc(
-            x,
-            y,
-            5,
-            0,
-            Math.PI*2
-        );
+        x=
+        hitX+
+        dx*0.5;
+
+        y=
+        hitY+
+        dy*0.5;
 
 
-        /*
-         * Continuar ligeramente
-         * después de la banda
-         */
-
-        x +=
-        dx * 0.5;
-
-        y +=
-        dy * 0.5;
-
-
-        ctx.moveTo(x,y);
+        remaining -=
+        distance;
 
 
         bounceCount++;
-
     }
-
-
-    /*
-     * Dibujar línea
-     */
-
-    ctx.lineWidth=3;
-
-    ctx.strokeStyle="white";
-
-    ctx.setLineDash([
-        12,
-        7
-    ]);
-
-    ctx.stroke();
-
-
-    ctx.setLineDash([]);
-
-
-    /*
-     * Dibujar puntos
-     * de rebote
-     */
-
-    /*
-     * Se redibuja la trayectoria
-     * de forma continua al mover
-     * el dedo.
-     */
 
 }
 
 
-/* ACTUALIZAR APUNTADO */
+/*
+ * ACTUALIZAR DIRECCIÓN
+ */
 
-function updateAim(clientX,clientY){
+function updateAim(
+    clientX,
+    clientY
+){
 
     const rect =
     table.getBoundingClientRect();
 
 
     const ballX =
-    rect.left +
-    rect.width * 0.25;
+    rect.left+
+    rect.width*0.25;
 
 
     const ballY =
-    rect.top +
-    rect.height * 0.50;
+    rect.top+
+    rect.height*0.50;
 
 
     const dx =
@@ -625,17 +618,18 @@ function updateAim(clientX,clientY){
     drawTrajectory(angle);
 
 
-    status.textContent =
-    "Apuntando • " +
-    Math.round(
-        angle * 180 / Math.PI
-    ) +
-    "°";
-
+    status.textContent=
+        "Apuntando • "+
+        Math.round(
+            angle*180/Math.PI
+        )+
+        "°";
 }
 
 
-/* TOUCH START */
+/*
+ * TOUCH START
+ */
 
 touchArea.addEventListener(
 "touchstart",
@@ -645,7 +639,7 @@ function(e){
 
     active=true;
 
-    const touch =
+    const touch=
     e.touches[0];
 
     updateAim(
@@ -656,11 +650,12 @@ function(e){
 },
 {
     passive:false
-}
-);
+});
 
 
-/* TOUCH MOVE */
+/*
+ * MOVIMIENTO CONTINUO
+ */
 
 touchArea.addEventListener(
 "touchmove",
@@ -672,7 +667,7 @@ function(e){
         return;
 
 
-    const touch =
+    const touch=
     e.touches[0];
 
 
@@ -684,11 +679,12 @@ function(e){
 },
 {
     passive:false
-}
-);
+});
 
 
-/* TOUCH END */
+/*
+ * SOLTAR
+ */
 
 touchArea.addEventListener(
 "touchend",
@@ -698,17 +694,18 @@ function(e){
 
     active=false;
 
-    status.textContent =
-    "Listo";
+    status.textContent=
+        "Listo";
 
 },
 {
     passive:false
-}
-);
+});
 
 
-/* CANCELAR */
+/*
+ * CANCELAR
+ */
 
 touchArea.addEventListener(
 "touchcancel",
@@ -719,29 +716,26 @@ function(){
 });
 
 
-/* REINICIAR */
+/*
+ * REINICIAR
+ */
 
 function resetAim(){
 
+    clearTrajectory();
+
     drawTrajectory(0);
 
-    status.textContent =
-    "Listo";
-
+    status.textContent=
+        "Listo";
 }
 
 
-/* CAMBIO DE TAMAÑO */
+/*
+ * Trayectoria inicial
+ */
 
-window.addEventListener(
-"resize",
-resizeCanvas
-);
-
-
-/* INICIAR */
-
-resizeCanvas();
+drawTrajectory(0);
 
 </script>
 
