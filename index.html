@@ -8,7 +8,6 @@ content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
 <title>Pool App</title>
 
 <style>
-
 html,body{
     margin:0;
     padding:0;
@@ -21,9 +20,7 @@ html,body{
     touch-action:none;
 }
 
-body{
-    text-align:center;
-}
+body{text-align:center}
 
 h1{
     margin:10px 0 3px;
@@ -41,14 +38,10 @@ p{
     max-width:900px;
     aspect-ratio:2/1;
     margin:auto;
-
     background:#08733c;
-
     border:18px solid #5b321c;
     border-radius:12px;
-
     overflow:hidden;
-
     touch-action:none;
     user-select:none;
 }
@@ -59,6 +52,7 @@ p{
     aspect-ratio:1;
     background:#050505;
     border-radius:50%;
+    z-index:4;
 }
 
 .p1{left:-3.5%;top:-3.5%}
@@ -76,6 +70,7 @@ p{
     border-radius:50%;
     transform:translate(-50%,-50%);
     pointer-events:none;
+    z-index:8;
 }
 
 #cueBall{
@@ -90,35 +85,22 @@ p{
     background:#e63946;
 }
 
-#aimLine{
+/* Trayectoria */
+#trajectory{
     position:absolute;
-
-    left:25%;
-    top:50%;
-
-    width:900px;
-    height:4px;
-
-    background:white;
-
-    transform-origin:0 50%;
-
+    inset:0;
+    width:100%;
+    height:100%;
+    z-index:5;
     pointer-events:none;
 }
 
+/* Zona táctil */
 #touchArea{
     position:absolute;
-
-    left:0;
-    top:0;
-
-    width:100%;
-    height:100%;
-
+    inset:0;
     z-index:20;
-
     background:transparent;
-
     touch-action:none;
 }
 
@@ -133,14 +115,12 @@ button{
     border-radius:8px;
     font-weight:bold;
 }
-
 </style>
 </head>
 
 <body>
 
 <h1>🎱 Pool App</h1>
-
 <p>Mantén el dedo y mueve para apuntar</p>
 
 <div id="table">
@@ -152,7 +132,7 @@ button{
     <div class="pocket p5"></div>
     <div class="pocket p6"></div>
 
-    <div id="aimLine"></div>
+    <canvas id="trajectory"></canvas>
 
     <div id="cueBall"></div>
     <div id="target"></div>
@@ -161,13 +141,9 @@ button{
 
 </div>
 
-<div id="status">
-    Listo
-</div>
+<div id="status">Listo</div>
 
-<button onclick="resetAim()">
-    Reiniciar
-</button>
+<button onclick="resetAim()">Reiniciar</button>
 
 <script>
 
@@ -177,46 +153,138 @@ document.getElementById("table");
 const touchArea =
 document.getElementById("touchArea");
 
-const line =
-document.getElementById("aimLine");
+const canvas =
+document.getElementById("trajectory");
+
+const ctx =
+canvas.getContext("2d");
 
 const status =
 document.getElementById("status");
 
-let active = false;
+let active=false;
+
+function resizeCanvas(){
+
+    canvas.width=table.clientWidth;
+    canvas.height=table.clientHeight;
+
+    drawTrajectory(0);
+}
+
+window.addEventListener("resize",resizeCanvas);
 
 
-/* CALCULAR DIRECCIÓN */
+/* Dibuja trayectoria y primer rebote */
 
-function update(x,y){
+function drawTrajectory(angle){
 
-    const rect =
-    table.getBoundingClientRect();
+    const w=canvas.width;
+    const h=canvas.height;
 
-    const ballX =
-    rect.left + rect.width * 0.25;
+    ctx.clearRect(0,0,w,h);
 
-    const ballY =
-    rect.top + rect.height * 0.50;
+    const startX=w*0.25;
+    const startY=h*0.50;
 
-    const dx =
-    x - ballX;
+    let dx=Math.cos(angle);
+    let dy=Math.sin(angle);
 
-    const dy =
-    y - ballY;
+    let x=startX;
+    let y=startY;
 
-    const angle =
-    Math.atan2(dy,dx);
+    const maxLength=Math.max(w,h)*3;
 
-    line.style.transform =
-    "rotate(" + angle + "rad)";
+    let remaining=maxLength;
 
-    status.textContent =
-    "Apuntando";
+    ctx.beginPath();
+    ctx.moveTo(x,y);
+
+    let bounce=0;
+
+    while(remaining>0 && bounce<3){
+
+        let tx=Infinity;
+        let ty=Infinity;
+
+        if(dx>0)
+            tx=(w-x)/dx;
+        else if(dx<0)
+            tx=(0-x)/dx;
+
+        if(dy>0)
+            ty=(h-y)/dy;
+        else if(dy<0)
+            ty=(0-y)/dy;
+
+        let distance=Math.min(tx,ty);
+
+        if(distance>=remaining){
+
+            x+=dx*remaining;
+            y+=dy*remaining;
+
+            ctx.lineTo(x,y);
+            break;
+
+        }
+
+        x+=dx*distance;
+        y+=dy*distance;
+
+        ctx.lineTo(x,y);
+
+        remaining-=distance;
+
+        /* Rebote */
+
+        if(Math.abs(distance-tx)<1){
+
+            dx=-dx;
+
+        }else{
+
+            dy=-dy;
+
+        }
+
+        bounce++;
+    }
+
+    ctx.lineWidth=3;
+    ctx.strokeStyle="white";
+    ctx.setLineDash([12,8]);
+    ctx.stroke();
+    ctx.setLineDash([]);
 }
 
 
-/* COMIENZA EL TOQUE */
+/* Calcula dirección */
+
+function update(x,y){
+
+    const rect=
+    table.getBoundingClientRect();
+
+    const ballX=
+    rect.left+rect.width*0.25;
+
+    const ballY=
+    rect.top+rect.height*0.50;
+
+    const dx=x-ballX;
+    const dy=y-ballY;
+
+    const angle=
+    Math.atan2(dy,dx);
+
+    drawTrajectory(angle);
+
+    status.textContent="Apuntando";
+}
+
+
+/* Toque inicial */
 
 touchArea.addEventListener(
 "touchstart",
@@ -224,22 +292,18 @@ function(e){
 
     e.preventDefault();
 
-    active = true;
+    active=true;
 
-    const t =
-    e.touches[0];
+    const t=e.touches[0];
 
-    update(
-        t.clientX,
-        t.clientY
-    );
+    update(t.clientX,t.clientY);
 
 },
 {passive:false}
 );
 
 
-/* MOVIMIENTO CONTINUO */
+/* Movimiento continuo */
 
 touchArea.addEventListener(
 "touchmove",
@@ -247,23 +311,18 @@ function(e){
 
     e.preventDefault();
 
-    if(!active)
-        return;
+    if(!active)return;
 
-    const t =
-    e.touches[0];
+    const t=e.touches[0];
 
-    update(
-        t.clientX,
-        t.clientY
-    );
+    update(t.clientX,t.clientY);
 
 },
 {passive:false}
 );
 
 
-/* TERMINA EL TOQUE */
+/* Soltar */
 
 touchArea.addEventListener(
 "touchend",
@@ -271,35 +330,33 @@ function(e){
 
     e.preventDefault();
 
-    active = false;
+    active=false;
 
-    status.textContent =
-    "Listo";
+    status.textContent="Listo";
 
 },
 {passive:false}
 );
 
 
-/* CANCELACIÓN */
-
 touchArea.addEventListener(
 "touchcancel",
 function(){
 
-    active = false;
+    active=false;
 
 });
 
 
 function resetAim(){
 
-    line.style.transform =
-    "rotate(0rad)";
+    drawTrajectory(0);
 
-    status.textContent =
-    "Listo";
+    status.textContent="Listo";
 }
+
+
+resizeCanvas();
 
 </script>
 
