@@ -2,7 +2,8 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 
 <title>Pool App</title>
 
@@ -11,13 +12,18 @@
   box-sizing: border-box;
 }
 
-body {
+html, body {
   margin: 0;
+  padding: 0;
   background: #111;
   color: white;
   font-family: Arial, sans-serif;
-  text-align: center;
   overflow: hidden;
+  touch-action: none;
+}
+
+body {
+  text-align: center;
 }
 
 h1 {
@@ -39,6 +45,8 @@ p {
   border: 18px solid #5b321c;
   border-radius: 12px;
   overflow: hidden;
+  touch-action: none;
+  user-select: none;
 }
 
 .pocket {
@@ -56,45 +64,47 @@ p {
 .p5 { left: 46.5%; top: -5%; }
 .p6 { left: 46.5%; bottom: -5%; }
 
-.ball {
+#cueBall,
+#target {
   position: absolute;
   width: 5%;
   aspect-ratio: 1;
   border-radius: 50%;
   transform: translate(-50%, -50%);
-  z-index: 5;
+  pointer-events: none;
 }
 
 #cueBall {
   left: 25%;
   top: 50%;
   background: white;
+  box-shadow: 0 2px 5px #222;
 }
 
 #target {
   left: 70%;
   top: 50%;
-  background: red;
+  background: #e63946;
 }
 
 #aimLine {
   position: absolute;
-  height: 4px;
-  width: 400px;
-  background: white;
   left: 25%;
   top: 50%;
+  width: 700px;
+  height: 4px;
+  background: white;
   transform-origin: 0 50%;
   pointer-events: none;
-  z-index: 2;
 }
 
-.controls {
-  margin-top: 12px;
+#status {
+  margin: 12px;
+  color: #aaa;
 }
 
 button {
-  padding: 12px 20px;
+  padding: 11px 18px;
   border: 0;
   border-radius: 8px;
   font-weight: bold;
@@ -105,7 +115,7 @@ button {
 <body>
 
 <h1>🎱 Pool App</h1>
-<p>Arrastra el dedo para apuntar</p>
+<p>Mantén el dedo sobre la mesa y muévelo para apuntar</p>
 
 <div id="table">
 
@@ -118,82 +128,98 @@ button {
 
   <div id="aimLine"></div>
 
-  <div id="cueBall" class="ball"></div>
-  <div id="target" class="ball"></div>
+  <div id="cueBall"></div>
+  <div id="target"></div>
 
 </div>
 
-<div class="controls">
-  <button onclick="resetAim()">Reiniciar línea</button>
-</div>
+<div id="status">Listo</div>
+
+<button onclick="resetAim()">Reiniciar</button>
 
 <script>
 
 const table = document.getElementById("table");
 const line = document.getElementById("aimLine");
+const statusText = document.getElementById("status");
 
-let dragging = false;
+let touching = false;
 
-function aim(x, y) {
+function updateAim(clientX, clientY) {
 
-  const rect = table.getBoundingClientRect();
+    const rect = table.getBoundingClientRect();
 
-  const startX = rect.width * 0.25;
-  const startY = rect.height * 0.50;
+    const startX = rect.left + rect.width * 0.25;
+    const startY = rect.top + rect.height * 0.50;
 
-  const mouseX = x - rect.left;
-  const mouseY = y - rect.top;
+    const dx = clientX - startX;
+    const dy = clientY - startY;
 
-  const dx = mouseX - startX;
-  const dy = mouseY - startY;
+    const angle = Math.atan2(dy, dx);
 
-  const angle = Math.atan2(dy, dx);
+    line.style.transform =
+        "rotate(" + angle + "rad)";
 
-  line.style.transform =
-    "rotate(" + angle + "rad)";
+    statusText.textContent =
+        "Apuntando • " + Math.round(angle * 180 / Math.PI) + "°";
 }
 
-table.addEventListener("pointermove", function(event) {
-  if (!dragging) return;
 
-  event.preventDefault();
+/* TOQUE */
 
-  const rect = table.getBoundingClientRect();
+table.addEventListener("touchstart", function(event) {
 
-  const startX = rect.left + rect.width * 0.25;
-  const startY = rect.top + rect.height * 0.50;
+    event.preventDefault();
 
-  const dx = event.clientX - startX;
-  const dy = event.clientY - startY;
+    touching = true;
 
-  const angle = Math.atan2(dy, dx);
+    const touch = event.touches[0];
 
-  line.style.transform = `rotate(${angle}rad)`;
+    updateAim(touch.clientX, touch.clientY);
+
+}, { passive: false });
+
+
+/* MOVIMIENTO CONTINUO */
+
+table.addEventListener("touchmove", function(event) {
+
+    event.preventDefault();
+
+    if (!touching) return;
+
+    const touch = event.touches[0];
+
+    updateAim(touch.clientX, touch.clientY);
+
+}, { passive: false });
+
+
+/* SOLTAR */
+
+table.addEventListener("touchend", function(event) {
+
+    event.preventDefault();
+
+    touching = false;
+
+    statusText.textContent = "Listo";
+
+}, { passive: false });
+
+
+table.addEventListener("touchcancel", function() {
+
+    touching = false;
+
 });
 
-table.addEventListener("pointermove", function(event) {
-
-  if (!dragging) return;
-
-  aim(event.clientX, event.clientY);
-
-});
-
-table.addEventListener("pointerup", function() {
-
-  dragging = false;
-
-});
-
-table.addEventListener("pointercancel", function() {
-
-  dragging = false;
-
-});
 
 function resetAim() {
 
-  line.style.transform = "rotate(0rad)";
+    line.style.transform = "rotate(0rad)";
+
+    statusText.textContent = "Listo";
 
 }
 
