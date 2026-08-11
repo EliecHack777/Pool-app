@@ -6,124 +6,117 @@
 <title>Pool App</title>
 
 <style>
-  * {
-    box-sizing: border-box;
-    touch-action: none;
-  }
+* {
+  box-sizing: border-box;
+  touch-action: none;
+}
 
-  body {
-    margin: 0;
-    min-height: 100vh;
-    background: #111;
-    color: white;
-    font-family: Arial, sans-serif;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-  }
+body {
+  margin: 0;
+  min-height: 100vh;
+  background: #111;
+  color: white;
+  font-family: Arial, sans-serif;
+  text-align: center;
+}
 
-  h1 {
-    margin: 18px 0 8px;
-  }
+h1 {
+  margin: 16px 0 5px;
+}
 
-  p {
-    margin: 0 0 15px;
-    color: #bbb;
-  }
+p {
+  color: #aaa;
+  margin-top: 0;
+}
 
-  #table {
-    position: relative;
-    width: 94vw;
-    max-width: 900px;
-    aspect-ratio: 2 / 1;
-    background: #08733c;
-    border: 18px solid #5b321c;
-    border-radius: 12px;
-    box-shadow: 0 0 25px #000;
-    overflow: hidden;
-  }
+#table {
+  position: relative;
+  width: 94vw;
+  max-width: 900px;
+  aspect-ratio: 2 / 1;
+  margin: 15px auto;
+  background: #08733c;
+  border: 18px solid #5b321c;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 0 25px #000;
+}
 
-  .pocket {
-    position: absolute;
-    width: 7%;
-    aspect-ratio: 1;
-    background: #050505;
-    border-radius: 50%;
-  }
+.pocket {
+  position: absolute;
+  width: 7%;
+  aspect-ratio: 1;
+  background: #050505;
+  border-radius: 50%;
+}
 
-  .p1 { left: -3.5%; top: -3.5%; }
-  .p2 { right: -3.5%; top: -3.5%; }
-  .p3 { left: -3.5%; bottom: -3.5%; }
-  .p4 { right: -3.5%; bottom: -3.5%; }
-  .p5 { left: 46.5%; top: -5%; }
-  .p6 { left: 46.5%; bottom: -5%; }
+.p1 { left: -3.5%; top: -3.5%; }
+.p2 { right: -3.5%; top: -3.5%; }
+.p3 { left: -3.5%; bottom: -3.5%; }
+.p4 { right: -3.5%; bottom: -3.5%; }
+.p5 { left: 46.5%; top: -5%; }
+.p6 { left: 46.5%; bottom: -5%; }
 
-  #cueBall {
-    position: absolute;
-    width: 5%;
-    aspect-ratio: 1;
-    background: white;
-    border-radius: 50%;
-    left: 25%;
-    top: 50%;
-    transform: translate(-50%, -50%);
-    box-shadow: 0 2px 5px #222;
-  }
+#cueBall,
+#target {
+  position: absolute;
+  width: 5%;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+}
 
-  #target {
-    position: absolute;
-    width: 5%;
-    aspect-ratio: 1;
-    background: #e63946;
-    border-radius: 50%;
-    left: 70%;
-    top: 50%;
-    transform: translate(-50%, -50%);
-  }
+#cueBall {
+  left: 25%;
+  top: 50%;
+  background: white;
+  box-shadow: 0 2px 6px #222;
+}
 
-  #aimLine {
-    position: absolute;
-    height: 3px;
-    background: white;
-    transform-origin: left center;
-    left: 25%;
-    top: 50%;
-    width: 45%;
-  }
+#target {
+  left: 70%;
+  top: 50%;
+  background: #e63946;
+}
 
-  .controls {
-    margin-top: 18px;
-    display: flex;
-    gap: 10px;
-    flex-wrap: wrap;
-    justify-content: center;
-  }
+#aimLine {
+  position: absolute;
+  height: 3px;
+  background: white;
+  transform-origin: left center;
+  left: 25%;
+  top: 50%;
+  width: 45%;
+  pointer-events: none;
+}
 
-  button {
-    border: 0;
-    border-radius: 8px;
-    padding: 12px 20px;
-    font-size: 16px;
-    font-weight: bold;
-    background: #eee;
-    color: #111;
-  }
+.controls {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin: 15px;
+}
 
-  button:active {
-    transform: scale(.96);
-  }
+button {
+  padding: 12px 18px;
+  border: none;
+  border-radius: 8px;
+  font-weight: bold;
+  font-size: 15px;
+}
 
-  #info {
-    margin-top: 12px;
-    color: #aaa;
-  }
+#info {
+  color: #aaa;
+  margin-bottom: 15px;
+}
 </style>
 </head>
 
 <body>
 
 <h1>🎱 Pool App</h1>
-<p>Herramienta de práctica de tiro</p>
+<p>Toca y arrastra para apuntar</p>
 
 <div id="table">
 
@@ -146,34 +139,79 @@
 </div>
 
 <div id="info">
-  Línea de tiro: <span id="length">45%</span>
+  Longitud: <span id="length">45%</span>
 </div>
 
 <script>
 
+const table = document.getElementById("table");
+const line = document.getElementById("aimLine");
+const lengthText = document.getElementById("length");
+
 let lineLength = 45;
 
+const ballX = 0.25;
+const ballY = 0.50;
+
+function updateAim(clientX, clientY) {
+
+  const rect = table.getBoundingClientRect();
+
+  const x = clientX - rect.left;
+  const y = clientY - rect.top;
+
+  const startX = rect.width * ballX;
+  const startY = rect.height * ballY;
+
+  const dx = x - startX;
+  const dy = y - startY;
+
+  const angle = Math.atan2(dy, dx);
+  const distance = Math.sqrt(dx * dx + dy * dy);
+
+  line.style.transform =
+    "rotate(" + angle + "rad)";
+
+  line.style.width =
+    Math.max(distance, 40) + "px";
+}
+
+table.addEventListener("pointerdown", function(e) {
+  updateAim(e.clientX, e.clientY);
+});
+
+table.addEventListener("pointermove", function(e) {
+  if (e.buttons) {
+    updateAim(e.clientX, e.clientY);
+  }
+});
+
 function extendLine() {
+
   lineLength += 10;
 
   if (lineLength > 100) {
     lineLength = 100;
   }
 
-  document.getElementById("aimLine").style.width =
+  line.style.width =
     lineLength + "%";
 
-  document.getElementById("length").textContent =
+  lengthText.textContent =
     lineLength + "%";
 }
 
 function resetLine() {
+
   lineLength = 45;
 
-  document.getElementById("aimLine").style.width =
+  line.style.width =
     lineLength + "%";
 
-  document.getElementById("length").textContent =
+  line.style.transform =
+    "rotate(0rad)";
+
+  lengthText.textContent =
     lineLength + "%";
 }
 
